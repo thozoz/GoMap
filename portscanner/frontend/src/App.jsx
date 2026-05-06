@@ -11,6 +11,7 @@ function App() {
     const [results, setResults] = useState([]);
     const [isScanning, setIsScanning] = useState(false);
     const [status, setStatus] = useState('');
+    const [filter, setFilter] = useState('ALL');
 
     useEffect(() => {
         const unsubscribePortResult = EventsOn("port_result", (result) => {
@@ -50,6 +51,17 @@ function App() {
         setIsScanning(false);
         setStatus("Scan cancelled");
     };
+
+    const handleClear = () => {
+        setResults([]);
+        setStatus('');
+    };
+
+    const filteredResults = results.filter(r => {
+        if (filter === 'OPEN') return r.Status === 'OPEN';
+        if (filter === 'FILTERED') return r.Status === 'FILTERED';
+        return true;
+    });
 
     const openPortsCount = results.filter(r => r.Status === 'OPEN').length;
 
@@ -126,10 +138,40 @@ function App() {
                         >
                             Cancel
                         </button>
+                        <button 
+                            onClick={handleClear} 
+                            disabled={isScanning || results.length === 0}
+                            className="bg-gray-600 hover:bg-gray-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-semibold py-2 px-8 rounded shadow-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            Clear
+                        </button>
                     </div>
                 </div>
 
                 <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+                    <div className="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
+                        <h2 className="text-gray-300 font-semibold">Results</h2>
+                        <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700">
+                            <button 
+                                onClick={() => setFilter('ALL')}
+                                className={`px-3 py-1 text-sm rounded-md transition-colors ${filter === 'ALL' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                Show all
+                            </button>
+                            <button 
+                                onClick={() => setFilter('OPEN')}
+                                className={`px-3 py-1 text-sm rounded-md transition-colors ${filter === 'OPEN' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                Show only OPEN
+                            </button>
+                            <button 
+                                onClick={() => setFilter('FILTERED')}
+                                className={`px-3 py-1 text-sm rounded-md transition-colors ${filter === 'FILTERED' ? 'bg-yellow-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                Show only FILTERED
+                            </button>
+                        </div>
+                    </div>
                     <div className="max-h-[400px] overflow-y-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-gray-700 sticky top-0">
@@ -140,7 +182,7 @@ function App() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {results.map((result, idx) => (
+                                {filteredResults.map((result, idx) => (
                                     <tr 
                                         key={idx} 
                                         className={`border-b border-gray-700 hover:bg-gray-700/50 transition-colors ${
@@ -162,6 +204,13 @@ function App() {
                                         </td>
                                     </tr>
                                 ))}
+                                {filteredResults.length === 0 && results.length > 0 && (
+                                    <tr>
+                                        <td colSpan="3" className="p-8 text-center text-gray-500">
+                                            No results match the selected filter.
+                                        </td>
+                                    </tr>
+                                )}
                                 {results.length === 0 && !isScanning && (
                                     <tr>
                                         <td colSpan="3" className="p-8 text-center text-gray-500">
