@@ -3,6 +3,8 @@
 
 export function CancelScan():Promise<void>;
 
+export function ScanNetwork(arg1:string,arg2:number,arg3:number):Promise<string>;
+
 export function StartScan(arg1:string,arg2:number,arg3:number,arg4:number,arg5:number):Promise<string>;
 
 export function StartScanList(arg1:string,arg2:Array<number>,arg3:number,arg4:number):Promise<string>;

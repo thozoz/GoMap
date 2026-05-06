@@ -6,6 +6,10 @@ export function CancelScan() {
   return window['go']['main']['App']['CancelScan']();
 }
 
+export function ScanNetwork(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ScanNetwork'](arg1, arg2, arg3);
+}
+
 export function StartScan(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['StartScan'](arg1, arg2, arg3, arg4, arg5);
 }

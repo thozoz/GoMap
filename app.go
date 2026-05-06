@@ -425,3 +425,94 @@ func (a *App) CancelScan() {
 		a.cancelFunc = nil
 	}
 }
+
+type HostResult struct {
+	IP       string `json:"IP"`
+	OpenPort int    `json:"OpenPort"`
+}
+
+// ScanNetwork scans all hosts in a CIDR range and emits "host_result" for each live host.
+func (a *App) ScanNetwork(cidr string, timeoutMs int, workers int) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", fmt.Errorf("invalid CIDR: %v", err)
+	}
+
+	// Collect all host IPs (skip network + broadcast)
+	var hosts []string
+	for ip := ipNet.IP.Mask(ipNet.Mask); ipNet.Contains(ip); incrementIP(ip) {
+		ip4 := make(net.IP, len(ip))
+		copy(ip4, ip)
+		hosts = append(hosts, ip4.String())
+	}
+	// Strip network address and broadcast address
+	if len(hosts) > 2 {
+		hosts = hosts[1 : len(hosts)-1]
+	}
+
+	scanCtx, cancel := context.WithCancel(a.ctx)
+	defer cancel()
+	a.mu.Lock()
+	a.cancelFunc = cancel
+	a.mu.Unlock()
+
+	probePorts := []int{22, 80, 443, 8080, 3389, 8443}
+	timeout := time.Duration(timeoutMs) * time.Millisecond
+
+	workChan := make(chan string, workers)
+	var wg sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for ip := range workChan {
+				select {
+				case <-scanCtx.Done():
+					return
+				default:
+				}
+				for _, port := range probePorts {
+					target := fmt.Sprintf("%s:%d", ip, port)
+					conn, err := net.DialTimeout("tcp", target, timeout)
+					if err == nil {
+						conn.Close()
+						runtime.EventsEmit(a.ctx, "host_result", HostResult{
+							IP:       ip,
+							OpenPort: port,
+						})
+						break // host is UP, no need to probe more ports
+					}
+				}
+			}
+		}()
+	}
+
+SendLoop:
+	for _, ip := range hosts {
+		select {
+		case <-scanCtx.Done():
+			break SendLoop
+		case workChan <- ip:
+		}
+	}
+	close(workChan)
+	wg.Wait()
+
+	if scanCtx.Err() != nil {
+		runtime.EventsEmit(a.ctx, "network_scan_done", "cancelled")
+		return "cancelled", nil
+	}
+	runtime.EventsEmit(a.ctx, "network_scan_done", "complete")
+	return "done", nil
+}
+
+// incrementIP increments an IP address in-place.
+func incrementIP(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
