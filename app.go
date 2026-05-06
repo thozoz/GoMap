@@ -429,6 +429,7 @@ func (a *App) CancelScan() {
 type HostResult struct {
 	IP       string `json:"IP"`
 	OpenPort int    `json:"OpenPort"`
+	Hostname string `json:"Hostname"`
 }
 
 // ScanNetwork scans all hosts in a CIDR range and emits "host_result" for each live host.
@@ -480,6 +481,7 @@ func (a *App) ScanNetwork(cidr string, timeoutMs int, workers int) (string, erro
 						runtime.EventsEmit(a.ctx, "host_result", HostResult{
 							IP:       ip,
 							OpenPort: port,
+							Hostname: resolveHostname(scanCtx, ip),
 						})
 						break // host is UP, no need to probe more ports
 					}

@@ -348,13 +348,14 @@ function App() {
                                 <thead className="bg-gray-700 sticky top-0">
                                     <tr>
                                         <th className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">IP Address</th>
+                                        <th className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">Hostname</th>
                                         <th className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">Detected Via</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {hostResults.length === 0 ? (
                                         <tr>
-                                            <td colSpan="2" className="p-8 text-center text-gray-500">
+                                            <td colSpan="3" className="p-8 text-center text-gray-500">
                                                 {isScanning ? 'Scanning network...' : 'No live hosts found yet. Start a network scan.'}
                                             </td>
                                         </tr>
@@ -364,6 +365,9 @@ function App() {
                                                 onClick={() => loadHostForPortScan(h.IP)}
                                                 className="border-b border-gray-700/50 hover:bg-violet-900/30 cursor-pointer transition-colors bg-violet-900/10">
                                                 <td className="p-3 font-mono text-sm text-gray-200">{h.IP}</td>
+                                                <td className="p-3 text-sm text-gray-400 font-mono">
+                                                    {h.Hostname || <span className="text-gray-600">—</span>}
+                                                </td>
                                                 <td className="p-3">
                                                     <span className="px-2 py-0.5 rounded text-xs font-bold border bg-violet-500/20 text-violet-400 border-violet-500/30">
                                                         port {h.OpenPort}
