@@ -17,12 +17,12 @@ jobs:
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
-            output: portscanner
+            output: GoMap
             asset: GoMap-linux-amd64
 
           - runner: windows-latest
             platform: windows/amd64
-            output: portscanner.exe
+            output: GoMap.exe
             asset: GoMap-windows-amd64.exe
 
     steps:
