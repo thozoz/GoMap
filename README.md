@@ -6,6 +6,17 @@ Built as a learning project to explore Go's networking primitives, goroutine wor
 
 ![GoMap Screenshot](screenshot.png)
 
+## Download
+
+Prebuilt binaries for Linux and Windows are available on the [Releases](../../releases) page:
+
+| Platform | File |
+|---|---|
+| Linux (x64) | `GoMap-linux-amd64` |
+| Windows (x64) | `GoMap-windows-amd64.exe` |
+
+A **latest** pre-release is updated automatically on every push to `main`.
+
 ## Features
 
 - **Port Range Scan** — scan any TCP port range with configurable timeout and worker count
