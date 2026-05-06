@@ -58,7 +58,7 @@ function App() {
             <div className="max-w-5xl mx-auto">
                 <header className="mb-8">
                     <h1 className="text-4xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                        NMap Lite
+                        GoMap
                     </h1>
                 </header>
 
