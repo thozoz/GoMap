@@ -70,7 +70,7 @@ function App() {
             .catch((err) => {
                 console.error(err);
                 setIsScanning(false);
-                setStatus("Scan error");
+                setStatus(`Scan error: ${err.message || err}`);
             });
     };
 
@@ -84,7 +84,7 @@ function App() {
             .catch((err) => {
                 console.error(err);
                 setIsScanning(false);
-                setStatus("Scan error");
+                setStatus(`Scan error: ${err.message || err}`);
             });
     };
 

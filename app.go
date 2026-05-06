@@ -82,8 +82,17 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // StartScan initiates a port scan
-func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, workers int) string {
+func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, workers int) (string, error) {
+	// Pre-check host resolution
+	if net.ParseIP(host) == nil {
+		_, err := net.LookupHost(host)
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve host: %v", err)
+		}
+	}
+
 	scanCtx, cancel := context.WithCancel(a.ctx)
+	defer cancel()
 	a.mu.Lock()
 	a.cancelFunc = cancel
 	a.mu.Unlock()
@@ -193,16 +202,25 @@ SendLoop:
 	
 	if scanCtx.Err() != nil {
 		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
-		return "cancelled"
+		return "cancelled", nil
 	} else {
 		runtime.EventsEmit(a.ctx, "scan_done", "complete")
-		return "done"
+		return "done", nil
 	}
 }
 
 // StartScanList initiates a port scan on a specific list of ports
-func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers int) string {
+func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers int) (string, error) {
+	// Pre-check host resolution
+	if net.ParseIP(host) == nil {
+		_, err := net.LookupHost(host)
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve host: %v", err)
+		}
+	}
+
 	scanCtx, cancel := context.WithCancel(a.ctx)
+	defer cancel()
 	a.mu.Lock()
 	a.cancelFunc = cancel
 	a.mu.Unlock()
@@ -312,10 +330,10 @@ SendLoop:
 	
 	if scanCtx.Err() != nil {
 		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
-		return "cancelled"
+		return "cancelled", nil
 	} else {
 		runtime.EventsEmit(a.ctx, "scan_done", "complete")
-		return "done"
+		return "done", nil
 	}
 }
 
