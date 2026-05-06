@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import { StartScan, CancelScan } from '../wailsjs/go/main/App';
+import { StartScan, StartScanList, CancelScan } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
 function App() {
@@ -33,6 +33,25 @@ function App() {
         setIsScanning(true);
         setStatus(`Scanning...`);
         StartScan(host, parseInt(startPort), parseInt(endPort), parseInt(timeoutMs), parseInt(workers))
+            .then((res) => {
+                if (res === "done") {
+                    setIsScanning(false);
+                    setStatus("Scan complete");
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                setIsScanning(false);
+                setStatus("Scan error");
+            });
+    };
+
+    const handleCommonPortsScan = () => {
+        setResults([]);
+        setIsScanning(true);
+        setStatus(`Scanning common ports...`);
+        const commonPorts = [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 6379, 8080, 8443];
+        StartScanList(host, commonPorts, parseInt(timeoutMs), parseInt(workers))
             .then((res) => {
                 if (res === "done") {
                     setIsScanning(false);
@@ -129,7 +148,14 @@ function App() {
                             disabled={isScanning}
                             className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-gray-400 text-white font-semibold py-2 px-8 rounded shadow-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
                         >
-                            {isScanning ? 'Scanning...' : 'Scan'}
+                            {isScanning ? 'Scanning...' : 'Scan Range'}
+                        </button>
+                        <button 
+                            onClick={handleCommonPortsScan} 
+                            disabled={isScanning}
+                            className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 disabled:text-gray-400 text-white font-semibold py-2 px-8 rounded shadow-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            Common Ports
                         </button>
                         <button 
                             onClick={handleCancel} 
