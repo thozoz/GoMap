@@ -12,6 +12,7 @@ function App() {
     const [isScanning, setIsScanning] = useState(false);
     const [status, setStatus] = useState('');
     const [filter, setFilter] = useState('ALL');
+    const [progress, setProgress] = useState({ Scanned: 0, Total: 0, Speed: 0 });
 
     useEffect(() => {
         const unsubscribePortResult = EventsOn("port_result", (result) => {
@@ -21,15 +22,20 @@ function App() {
             setIsScanning(false);
             setStatus("Scan complete");
         });
+        const unsubscribeScanProgress = EventsOn("scan_progress", (p) => {
+            setProgress(p);
+        });
 
         return () => {
             if (typeof unsubscribePortResult === 'function') unsubscribePortResult();
             if (typeof unsubscribeScanDone === 'function') unsubscribeScanDone();
+            if (typeof unsubscribeScanProgress === 'function') unsubscribeScanProgress();
         };
     }, []);
 
     const handleScan = () => {
         setResults([]);
+        setProgress({ Scanned: 0, Total: 0, Speed: 0 });
         setIsScanning(true);
         setStatus(`Scanning...`);
         StartScan(host, parseInt(startPort), parseInt(endPort), parseInt(timeoutMs), parseInt(workers))
@@ -48,6 +54,7 @@ function App() {
 
     const handleCommonPortsScan = () => {
         setResults([]);
+        setProgress({ Scanned: 0, Total: 0, Speed: 0 });
         setIsScanning(true);
         setStatus(`Scanning common ports...`);
         const commonPorts = [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 6379, 8080, 8443];
@@ -204,6 +211,7 @@ function App() {
                                 <tr>
                                     <th className="p-3 text-gray-300 font-semibold border-b border-gray-600">Port</th>
                                     <th className="p-3 text-gray-300 font-semibold border-b border-gray-600">Status</th>
+                                    <th className="p-3 text-gray-300 font-semibold border-b border-gray-600">Service</th>
                                     <th className="p-3 text-gray-300 font-semibold border-b border-gray-600">Banner</th>
                                 </tr>
                             </thead>
@@ -225,6 +233,9 @@ function App() {
                                                 {result.Status}
                                             </span>
                                         </td>
+                                        <td className="p-3 text-gray-300 text-sm">
+                                            {result.Service}
+                                        </td>
                                         <td className="p-3 font-mono text-sm text-gray-400 truncate max-w-xs" title={result.Banner}>
                                             {result.Banner || '-'}
                                         </td>
@@ -232,14 +243,14 @@ function App() {
                                 ))}
                                 {filteredResults.length === 0 && results.length > 0 && (
                                     <tr>
-                                        <td colSpan="3" className="p-8 text-center text-gray-500">
+                                        <td colSpan="4" className="p-8 text-center text-gray-500">
                                             No results match the selected filter.
                                         </td>
                                     </tr>
                                 )}
                                 {results.length === 0 && !isScanning && (
                                     <tr>
-                                        <td colSpan="3" className="p-8 text-center text-gray-500">
+                                        <td colSpan="4" className="p-8 text-center text-gray-500">
                                             No results yet. Start a scan to find open ports.
                                         </td>
                                     </tr>
@@ -247,12 +258,25 @@ function App() {
                             </tbody>
                         </table>
                     </div>
+                    {isScanning && progress.Total > 0 && (
+                        <div className="bg-gray-700 h-1 w-full">
+                            <div 
+                                className="bg-blue-500 h-1 transition-all duration-300" 
+                                style={{ width: `${Math.round((progress.Scanned / progress.Total) * 100)}%` }}
+                            ></div>
+                        </div>
+                    )}
                     <div className="bg-gray-900 p-3 text-sm text-gray-400 border-t border-gray-700 flex justify-between items-center">
                         <div>
                             {isScanning ? (
                                 <span className="flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                    {status} {openPortsCount > 0 && `- ${openPortsCount} open ports found`}
+                                    {status} 
+                                    {progress.Total > 0 && (
+                                        <span className="text-gray-500 ml-2">
+                                            ({progress.Scanned} / {progress.Total} ports, {progress.Speed.toFixed(0)} p/s)
+                                        </span>
+                                    )}
                                 </span>
                             ) : (
                                 <span>{status || 'Ready'}</span>
