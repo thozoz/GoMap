@@ -87,6 +87,32 @@ wails build
 
 Produces a single native binary in `build/bin/`.
 
+### Note for Modern Linux Users
+
+Modern Linux distributions (Fedora 40+, Ubuntu 24.04+, Debian 13+, etc.) have deprecated the `webkit2gtk-4.0` package in favor of `webkit2gtk-4.1`. If you see a **`libwebkit Not Found`** error when trying to run the app, you need to:
+
+1. Install the **4.1** development package for your distro. For example:
+
+   ```bash
+   # Fedora
+   sudo dnf install webkit2gtk4.1-devel
+
+   # Ubuntu / Debian
+   sudo apt install libwebkit2gtk-4.1-dev
+   ```
+
+2. Run the project with the `webkit2_41` build tag:
+
+   ```bash
+   wails dev -tags webkit2_41
+   ```
+
+   For production builds, use the same tag:
+
+   ```bash
+   wails build -tags webkit2_41
+   ```
+
 ## How It Works
 
 1. **Port scanning** uses `net.DialTimeout` over TCP. A full connection is attempted for each port — if it succeeds the port is `OPEN`, if it times out it's `FILTERED` (likely firewalled), and if it's refused it's `CLOSED` (silently skipped by default).
