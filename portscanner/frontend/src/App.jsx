@@ -18,9 +18,13 @@ function App() {
         const unsubscribePortResult = EventsOn("port_result", (result) => {
             setResults(prev => [...prev, result]);
         });
-        const unsubscribeScanDone = EventsOn("scan_done", () => {
+        const unsubscribeScanDone = EventsOn("scan_done", (statusStr) => {
             setIsScanning(false);
-            setStatus("Scan complete");
+            if (statusStr === "cancelled") {
+                setStatus("Scan cancelled");
+            } else {
+                setStatus("Scan complete");
+            }
         });
         const unsubscribeScanProgress = EventsOn("scan_progress", (p) => {
             setProgress(p);
@@ -39,12 +43,6 @@ function App() {
         setIsScanning(true);
         setStatus(`Scanning...`);
         StartScan(host, parseInt(startPort), parseInt(endPort), parseInt(timeoutMs), parseInt(workers))
-            .then((res) => {
-                if (res === "done") {
-                    setIsScanning(false);
-                    setStatus("Scan complete");
-                }
-            })
             .catch((err) => {
                 console.error(err);
                 setIsScanning(false);
@@ -59,12 +57,6 @@ function App() {
         setStatus(`Scanning common ports...`);
         const commonPorts = [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 6379, 8080, 8443];
         StartScanList(host, commonPorts, parseInt(timeoutMs), parseInt(workers))
-            .then((res) => {
-                if (res === "done") {
-                    setIsScanning(false);
-                    setStatus("Scan complete");
-                }
-            })
             .catch((err) => {
                 console.error(err);
                 setIsScanning(false);
@@ -74,8 +66,7 @@ function App() {
 
     const handleCancel = () => {
         CancelScan();
-        setIsScanning(false);
-        setStatus("Scan cancelled");
+        setStatus("Cancelling...");
     };
 
     const handleClear = () => {
@@ -283,7 +274,7 @@ function App() {
                             )}
                         </div>
                         <div>
-                            Total Found: {results.length}
+                            Total Found: {results.length} | Open: {openPortsCount}
                         </div>
                     </div>
                 </div>

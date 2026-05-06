@@ -15,6 +15,7 @@ import (
 type App struct {
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+	mu         sync.Mutex
 }
 
 var knownServices = map[int]string{
@@ -78,7 +79,9 @@ func (a *App) startup(ctx context.Context) {
 // StartScan initiates a port scan
 func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, workers int) string {
 	scanCtx, cancel := context.WithCancel(a.ctx)
+	a.mu.Lock()
 	a.cancelFunc = cancel
+	a.mu.Unlock()
 
 	ports := make(chan int, workers)
 	var wg sync.WaitGroup
@@ -120,13 +123,14 @@ func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, 
 		go func() {
 			defer wg.Done()
 			for port := range ports {
+				select {
+				case <-scanCtx.Done():
+					return // Scan cancelled, exit worker
+				default:
+				}
+
 				func() {
 					defer scannedCount.Add(1)
-					select {
-					case <-scanCtx.Done():
-						return // Scan cancelled
-					default:
-					}
 
 					target := fmt.Sprintf("%s:%d", host, port)
 					timeout := time.Duration(timeoutMs) * time.Millisecond
@@ -145,12 +149,12 @@ func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, 
 						// If connection refused, it's CLOSED, we just skip (don't emit)
 						return
 					}
+					defer conn.Close()
 
 					// Connection successful, it's OPEN
 					conn.SetReadDeadline(time.Now().Add(timeout))
 					buffer := make([]byte, 1024)
 					n, _ := conn.Read(buffer) // Ignore read error, banner might just be empty
-					conn.Close()
 
 					banner := string(buffer[:n])
 
@@ -176,15 +180,22 @@ SendLoop:
 	}
 	close(ports)
 	wg.Wait()
-	runtime.EventsEmit(a.ctx, "scan_done")
-
-	return "done"
+	
+	if scanCtx.Err() != nil {
+		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
+		return "cancelled"
+	} else {
+		runtime.EventsEmit(a.ctx, "scan_done", "complete")
+		return "done"
+	}
 }
 
 // StartScanList initiates a port scan on a specific list of ports
 func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers int) string {
 	scanCtx, cancel := context.WithCancel(a.ctx)
+	a.mu.Lock()
 	a.cancelFunc = cancel
+	a.mu.Unlock()
 
 	ports := make(chan int, workers)
 	var wg sync.WaitGroup
@@ -226,13 +237,14 @@ func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers
 		go func() {
 			defer wg.Done()
 			for port := range ports {
+				select {
+				case <-scanCtx.Done():
+					return // Scan cancelled, exit worker
+				default:
+				}
+
 				func() {
 					defer scannedCount.Add(1)
-					select {
-					case <-scanCtx.Done():
-						return // Scan cancelled
-					default:
-					}
 
 					target := fmt.Sprintf("%s:%d", host, port)
 					timeout := time.Duration(timeoutMs) * time.Millisecond
@@ -251,12 +263,12 @@ func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers
 						// If connection refused, it's CLOSED, we just skip (don't emit)
 						return
 					}
+					defer conn.Close()
 
 					// Connection successful, it's OPEN
 					conn.SetReadDeadline(time.Now().Add(timeout))
 					buffer := make([]byte, 1024)
 					n, _ := conn.Read(buffer) // Ignore read error, banner might just be empty
-					conn.Close()
 
 					banner := string(buffer[:n])
 
@@ -282,14 +294,22 @@ SendLoop:
 	}
 	close(ports)
 	wg.Wait()
-	runtime.EventsEmit(a.ctx, "scan_done")
-
-	return "done"
+	
+	if scanCtx.Err() != nil {
+		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
+		return "cancelled"
+	} else {
+		runtime.EventsEmit(a.ctx, "scan_done", "complete")
+		return "done"
+	}
 }
 
 // CancelScan cancels the ongoing scan
 func (a *App) CancelScan() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 	if a.cancelFunc != nil {
 		a.cancelFunc()
+		a.cancelFunc = nil
 	}
 }
