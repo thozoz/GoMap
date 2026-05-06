@@ -20,13 +20,6 @@ jobs:
             output: portscanner
             asset: GoMap-linux-amd64
 
-          - runner: ubuntu-latest
-            platform: linux/arm64
-            output: portscanner
-            asset: GoMap-linux-arm64
-            cross_cc: aarch64-linux-gnu-gcc
-            cross_pkg: gcc-aarch64-linux-gnu
-
           - runner: windows-latest
             platform: windows/amd64
             output: portscanner.exe
@@ -56,20 +49,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
 
-      - name: Install arm64 cross-compiler
-        if: matrix.cross_pkg != ''
-        run: sudo apt-get install -y ${{ matrix.cross_pkg }}
 
       # ── Build ────────────────────────────────────────────────────────────────
-      - name: Build (arm64 cross-compile)
-        if: matrix.cross_cc != ''
-        env:
-          CC: ${{ matrix.cross_cc }}
-          CGO_ENABLED: '1'
-        run: wails build -platform ${{ matrix.platform }} -tags webkit2_41
-
       - name: Build
-        if: matrix.cross_cc == ''
         run: wails build -platform ${{ matrix.platform }} -tags webkit2_41
 
       # ── Rename to final asset name ───────────────────────────────────────────
@@ -82,8 +64,19 @@ jobs:
         shell: pwsh
         run: Copy-Item build/bin/${{ matrix.output }} build/bin/${{ matrix.asset }}
 
-      # ── Upload to GitHub Release (tags only) ─────────────────────────────────
-      - name: Upload release asset
+      # ── Upload to GitHub Release ─────────────────────────────────────────────
+      - name: Upload to "latest" pre-release (main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          prerelease: true
+          files: build/bin/${{ matrix.asset }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to versioned release (tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
