@@ -59,6 +59,11 @@ type PortResult struct {
 	Banner  string `json:"Banner"`
 }
 
+type BannerResult struct {
+	Port   int    `json:"Port"`
+	Banner string `json:"Banner"`
+}
+
 type ScanProgress struct {
 	Scanned int     `json:"Scanned"`
 	Total   int     `json:"Total"`
@@ -152,18 +157,23 @@ func (a *App) StartScan(host string, startPort int, endPort int, timeoutMs int, 
 					defer conn.Close()
 
 					// Connection successful, it's OPEN
-					conn.SetReadDeadline(time.Now().Add(timeout))
-					buffer := make([]byte, 1024)
-					n, _ := conn.Read(buffer) // Ignore read error, banner might just be empty
-
-					banner := string(buffer[:n])
-
 					runtime.EventsEmit(a.ctx, "port_result", PortResult{
 						Port:    port,
 						Status:  "OPEN",
 						Service: getService(port),
-						Banner:  banner,
+						Banner:  "",
 					})
+
+					// Attempt to read banner non-blocking
+					conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+					buffer := make([]byte, 1024)
+					n, err := conn.Read(buffer)
+					if err == nil && n > 0 {
+						runtime.EventsEmit(a.ctx, "port_banner", BannerResult{
+							Port:   port,
+							Banner: string(buffer[:n]),
+						})
+					}
 				}()
 			}
 		}()
@@ -266,18 +276,23 @@ func (a *App) StartScanList(host string, portsList []int, timeoutMs int, workers
 					defer conn.Close()
 
 					// Connection successful, it's OPEN
-					conn.SetReadDeadline(time.Now().Add(timeout))
-					buffer := make([]byte, 1024)
-					n, _ := conn.Read(buffer) // Ignore read error, banner might just be empty
-
-					banner := string(buffer[:n])
-
 					runtime.EventsEmit(a.ctx, "port_result", PortResult{
 						Port:    port,
 						Status:  "OPEN",
 						Service: getService(port),
-						Banner:  banner,
+						Banner:  "",
 					})
+
+					// Attempt to read banner non-blocking
+					conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+					buffer := make([]byte, 1024)
+					n, err := conn.Read(buffer)
+					if err == nil && n > 0 {
+						runtime.EventsEmit(a.ctx, "port_banner", BannerResult{
+							Port:   port,
+							Banner: string(buffer[:n]),
+						})
+					}
 				}()
 			}
 		}()

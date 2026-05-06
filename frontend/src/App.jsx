@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import { StartScan, StartScanList, CancelScan } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
@@ -14,11 +14,32 @@ function App() {
     const [filter, setFilter] = useState('ALL');
     const [progress, setProgress] = useState({ Scanned: 0, Total: 0, Speed: 0 });
 
+    const resultBufferRef = useRef([]);
+
     useEffect(() => {
+        let isComponentMounted = true;
+
+        const flushInterval = setInterval(() => {
+            if (resultBufferRef.current.length > 0 && isComponentMounted) {
+                const bufferToFlush = resultBufferRef.current;
+                resultBufferRef.current = [];
+                setResults(prev => [...prev, ...bufferToFlush]);
+            }
+        }, 500);
+
         const unsubscribePortResult = EventsOn("port_result", (result) => {
-            setResults(prev => [...prev, result]);
+            resultBufferRef.current.push(result);
+        });
+        const unsubscribePortBanner = EventsOn("port_banner", ({Port, Banner}) => {
+            resultBufferRef.current = resultBufferRef.current.map(r => r.Port === Port ? { ...r, Banner } : r);
+            setResults(prev => prev.map(r => r.Port === Port ? { ...r, Banner } : r));
         });
         const unsubscribeScanDone = EventsOn("scan_done", (statusStr) => {
+            if (resultBufferRef.current.length > 0) {
+                const bufferToFlush = resultBufferRef.current;
+                resultBufferRef.current = [];
+                setResults(prev => [...prev, ...bufferToFlush]);
+            }
             setIsScanning(false);
             if (statusStr === "cancelled") {
                 setStatus("Scan cancelled");
@@ -31,7 +52,10 @@ function App() {
         });
 
         return () => {
+            isComponentMounted = false;
+            clearInterval(flushInterval);
             if (typeof unsubscribePortResult === 'function') unsubscribePortResult();
+            if (typeof unsubscribePortBanner === 'function') unsubscribePortBanner();
             if (typeof unsubscribeScanDone === 'function') unsubscribeScanDone();
             if (typeof unsubscribeScanProgress === 'function') unsubscribeScanProgress();
         };
@@ -207,7 +231,7 @@ function App() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredResults.map((result, idx) => (
+                                {filteredResults.slice(0, 1000).map((result, idx) => (
                                     <tr 
                                         key={idx} 
                                         className={`border-b border-gray-700 hover:bg-gray-700/50 transition-colors ${
@@ -232,6 +256,13 @@ function App() {
                                         </td>
                                     </tr>
                                 ))}
+                                {filteredResults.length > 1000 && (
+                                    <tr>
+                                        <td colSpan="4" className="p-4 text-center text-yellow-500 font-semibold bg-gray-800">
+                                            Showing first 1000 of {filteredResults.length} results to prevent lag. Please use filters to find specific ports.
+                                        </td>
+                                    </tr>
+                                )}
                                 {filteredResults.length === 0 && results.length > 0 && (
                                     <tr>
                                         <td colSpan="4" className="p-8 text-center text-gray-500">
@@ -241,8 +272,17 @@ function App() {
                                 )}
                                 {results.length === 0 && !isScanning && (
                                     <tr>
-                                        <td colSpan="4" className="p-8 text-center text-gray-500">
-                                            No results yet. Start a scan to find open ports.
+                                        <td colSpan="4" className={`p-8 text-center ${status && status.includes('failed to resolve') ? 'text-red-400 font-semibold' : 'text-gray-500'}`}>
+                                            {status && status.includes('failed to resolve') 
+                                                ? status 
+                                                : "No results yet. Start a scan to find open ports."}
+                                        </td>
+                                    </tr>
+                                )}
+                                {isScanning && results.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="p-8 text-center text-gray-400">
+                                            Scanning in progress... Found: {results.length}
                                         </td>
                                     </tr>
                                 )}
