@@ -1,13 +1,13 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "portscanner",
-  "outputfilename": "portscanner",
+  "name": "GoMap",
+  "outputfilename": "GoMap",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "Efe Özan",
-    "email": "efeozan@marun.edu.tr"
+    "name": "thozoz",
+    "email": "efeozan538@gmail.com"
   }
 }
