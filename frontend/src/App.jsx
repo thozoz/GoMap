@@ -129,6 +129,7 @@ function App() {
     };
 
     const loadHostForPortScan = (ip) => {
+        if (isScanning) return;
         setHost(ip);
         setMode('port');
     };
@@ -263,7 +264,7 @@ function App() {
 
                         <div className="max-h-96 overflow-y-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-700 sticky top-0">
+                                <thead className="bg-gray-700 sticky top-0 z-10">
                                     <tr>
                                         {['Port', 'Status', 'Service', 'Banner'].map(h => (
                                             <th key={h} className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">{h}</th>
@@ -345,7 +346,7 @@ function App() {
 
                         <div className="max-h-96 overflow-y-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-700 sticky top-0">
+                                <thead className="bg-gray-700 sticky top-0 z-10">
                                     <tr>
                                         <th className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">IP Address</th>
                                         <th className="p-3 text-gray-300 font-semibold text-sm border-b border-gray-600">Hostname</th>
@@ -360,10 +361,24 @@ function App() {
                                             </td>
                                         </tr>
                                     ) : (
-                                        hostResults.map((h, i) => (
+                                        [...hostResults].sort((a, b) => {
+                                            if (a.Hostname && !b.Hostname) return -1;
+                                            if (!a.Hostname && b.Hostname) return 1;
+                                            // Fallback to sorting by IP address roughly
+                                            const ipA = a.IP.split('.').map(Number);
+                                            const ipB = b.IP.split('.').map(Number);
+                                            for (let i = 0; i < 4; i++) {
+                                                if (ipA[i] !== ipB[i]) return ipA[i] - ipB[i];
+                                            }
+                                            return 0;
+                                        }).map((h, i) => (
                                             <tr key={`${h.IP}-${i}`}
                                                 onClick={() => loadHostForPortScan(h.IP)}
-                                                className="border-b border-gray-700/50 hover:bg-violet-900/30 cursor-pointer transition-colors bg-violet-900/10">
+                                                className={`border-b border-gray-700/50 transition-colors bg-violet-900/10 ${
+                                                    isScanning 
+                                                        ? 'cursor-not-allowed opacity-80' 
+                                                        : 'hover:bg-violet-900/30 cursor-pointer'
+                                                }`}>
                                                 <td className="p-3 font-mono text-sm text-gray-200">{h.IP}</td>
                                                 <td className="p-3 text-sm text-gray-400 font-mono">
                                                     {h.Hostname || <span className="text-gray-600">—</span>}

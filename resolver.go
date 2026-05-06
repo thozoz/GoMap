@@ -23,11 +23,15 @@ func resolveHostname(ctx context.Context, ip string) string {
 	launch := func(fn func(context.Context, string) string) {
 		go func() {
 			if name := fn(tctx, ip); name != "" {
-				// Avoid returning raw Android randomized IDs if possible
-				// We still return it if it's the only thing we got, but we yield briefly
-				if len(name) > 15 && strings.TrimFunc(name, func(r rune) bool {
+				// Avoid returning raw Android randomized IDs or generic UPnP names if possible
+				// We still return them if they're the only thing we got, but we yield briefly
+				nameLower := strings.ToLower(name)
+				isNumeric := len(name) > 15 && strings.TrimFunc(name, func(r rune) bool {
 					return r >= '0' && r <= '9'
-				}) == "" {
+				}) == ""
+				isGeneric := nameLower == "upnp igd" || nameLower == "internetgatewaydevice" || nameLower == "gateway" || nameLower == "router"
+
+				if isNumeric || isGeneric {
 					time.Sleep(500 * time.Millisecond) 
 				}
 				select {
