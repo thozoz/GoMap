@@ -477,6 +477,37 @@ func (a *App) ScanNetwork(cidr string, timeoutMs int, workers int) (string, erro
 	workChan := make(chan string, workers)
 	var wg sync.WaitGroup
 
+	totalHosts := len(hosts)
+	var scannedCount atomic.Int32
+
+	// Progress updater
+	go func() {
+		startTime := time.Now()
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-scanCtx.Done():
+				return
+			case <-ticker.C:
+				scanned := int(scannedCount.Load())
+				elapsed := time.Since(startTime).Seconds()
+				var speed float64
+				if elapsed > 0 {
+					speed = float64(scanned) / elapsed
+				}
+				runtime.EventsEmit(a.ctx, "scan_progress", ScanProgress{
+					Scanned: scanned,
+					Total:   totalHosts,
+					Speed:   speed,
+				})
+				if scanned >= totalHosts {
+					return
+				}
+			}
+		}
+	}()
+
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -487,19 +518,23 @@ func (a *App) ScanNetwork(cidr string, timeoutMs int, workers int) (string, erro
 					return
 				default:
 				}
-				for _, port := range probePorts {
-					target := fmt.Sprintf("%s:%d", ip, port)
-					conn, err := net.DialTimeout("tcp", target, timeout)
-					if err == nil {
-						conn.Close()
-						runtime.EventsEmit(a.ctx, "host_result", HostResult{
-							IP:       ip,
-							OpenPort: port,
-							Hostname: resolveHostname(scanCtx, ip),
-						})
-						break // host is UP, no need to probe more ports
+				
+				func() {
+					defer scannedCount.Add(1)
+					for _, port := range probePorts {
+						target := fmt.Sprintf("%s:%d", ip, port)
+						conn, err := net.DialTimeout("tcp", target, timeout)
+						if err == nil {
+							conn.Close()
+							runtime.EventsEmit(a.ctx, "host_result", HostResult{
+								IP:       ip,
+								OpenPort: port,
+								Hostname: resolveHostname(scanCtx, ip),
+							})
+							break // host is UP, no need to probe more ports
+						}
 					}
-				}
+				}()
 			}
 		}()
 	}
@@ -514,6 +549,13 @@ SendLoop:
 	}
 	close(workChan)
 	wg.Wait()
+
+	// Ensure final progress is emitted immediately before closing
+	runtime.EventsEmit(a.ctx, "scan_progress", ScanProgress{
+		Scanned: int(scannedCount.Load()),
+		Total:   totalHosts,
+		Speed:   0,
+	})
 
 	if scanCtx.Err() != nil {
 		runtime.EventsEmit(a.ctx, "network_scan_done", "cancelled")

@@ -395,10 +395,19 @@ function App() {
                             </table>
                         </div>
 
+                        <div className="bg-gray-700 h-0.5 w-full">
+                            <div className="bg-violet-500 h-0.5 transition-all duration-300" style={{ width: `${progressPct}%` }} />
+                        </div>
+
                         <div className="bg-gray-900 px-4 py-2.5 text-xs text-gray-400 border-t border-gray-700 flex justify-between items-center">
                             <div className="flex items-center gap-2">
                                 {isScanning && <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />}
                                 <span>{status}</span>
+                                {isScanning && progress.Total > 0 && (
+                                    <span className="text-gray-500">
+                                        — {progress.Scanned}/{progress.Total} IPs · {progress.Speed.toFixed(0)} IP/s · {progressPct}%
+                                    </span>
+                                )}
                             </div>
                             <span>Live hosts found: {hostResults.length}</span>
                         </div>
