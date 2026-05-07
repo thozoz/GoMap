@@ -2,6 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --color-base: 17 24 39;
+    /* gray-900 */
+    --color-panel: 31 41 55;
+    /* gray-800 */
+    --color-header: 55 65 81;
+    /* gray-700 */
+    --color-hover: 55 65 81;
+    /* gray-700 */
+    --color-input: 55 65 81;
+    /* gray-700 */
+    --color-border: 75 85 99;
+    /* gray-600 */
+    --color-border-panel: 55 65 81;
+    /* gray-700 */
+    --color-text-main: 255 255 255;
+    /* white */
+    --color-text-muted: 156 163 175;
+    /* gray-400 */
+
+    --color-btn-primary: 37 99 235;
+    /* blue-600 */
+    --color-btn-primary-hover: 59 130 246;
+    /* blue-500 */
+    --color-btn-secondary: 124 58 237;
+    /* violet-600 */
+    --color-btn-secondary-hover: 139 92 246;
+    /* violet-500 */
+    --color-btn-success: 5 150 105;
+    /* emerald-600 */
+    --color-btn-success-hover: 16 185 129;
+    /* emerald-500 */
+    --color-btn-danger: 220 38 38;
+    /* red-600 */
+    --color-btn-danger-hover: 239 68 68;
+    /* red-500 */
+    --color-btn-neutral: 75 85 99;
+    /* gray-600 */
+    --color-btn-neutral-hover: 107 114 128;
+    /* gray-500 */
+
+    --color-accent: 96 165 250;
+    /* blue-400 */
+}
+
+[data-theme='dark'] {
+    --color-base: 0 0 0;
+    /* black */
+    --color-panel: 10 10 10;
+    /* very dark gray */
+    --color-header: 20 20 20;
+    --color-hover: 25 25 25;
+    --color-input: 20 20 20;
+    --color-border: 40 40 40;
+    --color-border-panel: 30 30 30;
+    --color-text-main: 255 255 255;
+    --color-text-muted: 150 150 150;
+
+    /* Muted, professional flat colors for Dark Theme */
+    --color-btn-primary: 30 96 145;
+    /* #1e6091 */
+    --color-btn-primary-hover: 41 128 185;
+    /* #2980b9 */
+    --color-btn-secondary: 92 74 138;
+    /* #5c4a8a */
+    --color-btn-secondary-hover: 123 100 184;
+    /* #7b64b8 */
+    --color-btn-success: 27 67 50;
+    /* #1b4332 */
+    --color-btn-success-hover: 45 106 79;
+    /* #2d6a4f */
+    --color-btn-danger: 107 31 31;
+    /* #6b1f1f */
+    --color-btn-danger-hover: 146 43 43;
+    /* #922b2b */
+    --color-btn-neutral: 45 45 45;
+    /* #2d2d2d */
+    --color-btn-neutral-hover: 64 64 64;
+    /* #404040 */
+
+    --color-accent: 30 96 145;
+    /* #1e6091 */
+}
+
+[data-theme='light'] {
+    --color-base: 243 244 246;
+    /* gray-100 */
+    --color-panel: 255 255 255;
+    /* white */
+    --color-header: 229 231 235;
+    /* gray-200 */
+    --color-hover: 229 231 235;
+    /* gray-200 */
+    --color-input: 243 244 246;
+    /* gray-100 */
+    --color-border: 209 213 219;
+    /* gray-300 */
+    --color-border-panel: 229 231 235;
+    /* gray-200 */
+    --color-text-main: 17 24 39;
+    /* gray-900 */
+    --color-text-muted: 75 85 99;
+    /* gray-600 */
+
+    /* Random fun colors as requested */
+    --color-btn-primary: 236 72 153;
+    /* pink-500 */
+    --color-btn-primary-hover: 244 114 182;
+    /* pink-400 */
+    --color-btn-secondary: 245 158 11;
+    /* amber-500 */
+    --color-btn-secondary-hover: 251 191 36;
+    /* amber-400 */
+    --color-btn-success: 14 165 233;
+    /* sky-500 */
+    --color-btn-success-hover: 56 189 248;
+    /* sky-400 */
+    --color-btn-danger: 239 68 68;
+    /* red-500 */
+    --color-btn-danger-hover: 248 113 113;
+    /* red-400 */
+    --color-btn-neutral: 156 163 175;
+    /* gray-400 */
+    --color-btn-neutral-hover: 209 213 219;
+    /* gray-300 */
+
+    --color-accent: 236 72 153;
+    /* pink-500 */
+}
+
 html {
-    background-color: rgba(17, 24, 39, 1); /* bg-gray-900 */
+    background-color: rgb(var(--color-base));
 }
