@@ -279,6 +279,13 @@ SendLoop:
 	close(ports)
 	wg.Wait()
 	
+	// Ensure final progress is emitted immediately before closing
+	runtime.EventsEmit(a.ctx, "scan_progress", ScanProgress{
+		Scanned: int(scannedCount.Load()),
+		Total:   totalPorts,
+		Speed:   0,
+	})
+
 	if scanCtx.Err() != nil {
 		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
 		return "cancelled", nil
@@ -407,6 +414,13 @@ SendLoop:
 	close(ports)
 	wg.Wait()
 	
+	// Ensure final progress is emitted immediately before closing
+	runtime.EventsEmit(a.ctx, "scan_progress", ScanProgress{
+		Scanned: int(scannedCount.Load()),
+		Total:   totalPorts,
+		Speed:   0,
+	})
+
 	if scanCtx.Err() != nil {
 		runtime.EventsEmit(a.ctx, "scan_done", "cancelled")
 		return "cancelled", nil
