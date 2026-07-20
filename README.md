@@ -1,5 +1,7 @@
 # GoMap
 
+> ⚠️ **Finished learning project — archived.** Built to explore Go's networking and concurrency primitives. Complete and not actively maintained.
+
 A lightweight port scanner desktop app built with a **Go** backend and **React** frontend via [Wails](https://wails.io). Scans TCP ports, grabs service banners, detects live hosts on a network, and displays results in real time through a dark-themed UI.
 
 Built as a learning project to explore Go's networking primitives, goroutine worker pools, and Wails as a desktop app framework.
@@ -121,6 +123,15 @@ Modern Linux distributions (Fedora 40+, Ubuntu 24.04+, Debian 13+, etc.) have de
 4. **Real-time UI** — Go emits a `port_result` Wails event the instant a port state is determined. The React frontend buffers incoming events and flushes them to state every 300ms to avoid excessive re-renders.
 5. **Banner grabbing** — after confirming a port is open, a 500ms read deadline is set on the connection. Any bytes received are emitted as a separate `port_banner` event and injected into the matching table row.
 6. **Network discovery** — `ScanNetwork` parses a CIDR with `net.ParseCIDR`, iterates all host addresses, and probes each one on ports `22, 80, 443, 8080, 3389, 8443`. The first successful connection marks the host as live.
+
+## What I Learned
+
+A deliberate exercise in Go's concurrency and networking model:
+
+- **Goroutine worker pools** — a bounded set of goroutines pulling ports from a channel concurrently, turning a slow sequential scan into a fast parallel one.
+- **Context-based cancellation** — every scan runs under `context.WithCancel`; cancelling unwinds all workers cleanly via a `select` check, with a mutex guarding the cancel function against data races.
+- **Low-level TCP networking** — `net.DialTimeout` for port probing, connection read deadlines for banner grabbing, and `net.ParseCIDR` for host enumeration.
+- **Concurrency-safe result streaming** — emitting results the instant they're found and buffering them on the frontend to avoid excessive re-renders.
 
 ## License
 
